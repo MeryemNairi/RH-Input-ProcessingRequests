@@ -1,0 +1,40 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/package-solution.schema.json",
+  "solution": {
+    "name": "back-office-client-side-solution",
+    "id": "e10e8359-b6f7-4f7e-a867-49ba19fdd63a",
+    "version": "1.0.0.0",
+    "includeClientSideAssets": true,
+    "skipFeatureDeployment": true,
+    "isDomainIsolated": false,
+    "developer": {
+      "name": "",
+      "websiteUrl": "",
+      "privacyUrl": "",
+      "termsOfUseUrl": "",
+      "mpnId": "Undefined-1.18.2"
+    },
+    "metadata": {
+      "shortDescription": {
+        "default": "back-office description"
+      },
+      "longDescription": {
+        "default": "back-office description"
+      },
+      "screenshotPaths": [],
+      "videoUrl": "",
+      "categories": []
+    },
+    "features": [
+      {
+        "title": "back-office Feature",
+        "description": "The feature that activates elements of the back-office solution.",
+        "id": "bf17bc08-0fdf-41e8-b99a-5f39fa7b8cd9",
+        "version": "1.0.0.0"
+      }
+    ]
+  },
+  "paths": {
+    "zippedPackage": "solution/back-office.sppkg"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "@microsoft/generator-sharepoint": {
+    "plusBeta": false,
+    "isCreatingSolution": true,
+    "nodeVersion": "18.20.2",
+    "sdksVersions": {
+      "@microsoft/microsoft-graph-client": "3.0.2",
+      "@microsoft/teams-js": "2.12.0"
+    },
+    "version": "1.18.2",
+    "libraryName": "back-office",
+    "libraryId": "e10e8359-b6f7-4f7e-a867-49ba19fdd63a",
+    "environment": "spo",
+    "packageManager": "npm",
+    "solutionName": "back-office",
+    "solutionShortDescription": "back-office description",
+    "skipFeatureDeployment": true,
+    "isDomainIsolated": false,
+    "componentType": "webpart"
+  }
+}
