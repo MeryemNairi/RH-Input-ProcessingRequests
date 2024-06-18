@@ -3,23 +3,18 @@ import * as ReactDom from 'react-dom';
 import { Version } from '@microsoft/sp-core-library';
 import {
   BaseClientSideWebPart,
-
+  IPropertyPaneConfiguration,
+  PropertyPaneTextField
 } from '@microsoft/sp-webpart-base';
 import { sp } from "@pnp/sp/presets/all";
-
-
-
+import { BrowserRouter as Router } from 'react-router-dom'; 
 
 import BackOffice from './components/BackOffice';
 
 export default class CareerPageWebPart extends BaseClientSideWebPart<{}> {
 
   protected onInit(): Promise<void> {
-
     return super.onInit().then(_ => {
-  
-      
-  
       sp.setup({
         spfxContext: this.context as any
       });
@@ -27,13 +22,10 @@ export default class CareerPageWebPart extends BaseClientSideWebPart<{}> {
   }
   
   public render(): void {
-    const element: React.ReactElement<{}> = React.createElement(
-      React.Fragment,
+    const element: React.ReactElement = React.createElement(
+      Router, 
       {},
-       // Include here any other componnet
-      React.createElement(BackOffice),
-     
-      
+      React.createElement(BackOffice, { context: this.context }) 
     );
 
     ReactDom.render(element, this.domElement);
@@ -43,12 +35,30 @@ export default class CareerPageWebPart extends BaseClientSideWebPart<{}> {
     ReactDom.unmountComponentAtNode(this.domElement);
   }
 
+  protected getPropertyPaneConfiguration(): IPropertyPaneConfiguration {
+    return {
+      pages: [
+        {
+          header: {
+            description: "Description"
+          },
+          groups: [
+            {
+              groupName: "Group Name",
+              groupFields: [
+                PropertyPaneTextField('description', {
+                  label: "Label"
+                })
+              ]
+            }
+          ]
+        }
+      ]
+    };
+  }
+
   protected get dataVersion(): Version {
     return Version.parse('1.0');
   }
 
- 
-
-
-  
 }

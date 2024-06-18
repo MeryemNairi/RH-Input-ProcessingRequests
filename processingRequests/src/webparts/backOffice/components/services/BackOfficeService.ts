@@ -6,50 +6,18 @@ export interface IFormProps {
   context: WebPartContext;
 }
 
-export const submitToProcessingRequest = async (
-  processingDate: Date,
-  datedetraitement: Date,
-  userName: string
-) => {
-  try {
-    const list = sp.web.lists.getByTitle('processingRequest');
-    await list.items.add({
-      datedetraitement: datedetraitement.toISOString(),
-      datedefindetraitement: null, // Initialize end processing date as null
-      username: userName,
-    });
-  } catch (error) {
-    console.error('Error submitting to processingRequest:', error);
-    throw new Error(
-      'An error occurred while submitting to processingRequest. Please try again.'
-    );
-  }
-};
-
-export interface IRequestData {
-  id: number; 
-  datedetraitement: Date; 
-  datedefindetraitement: Date | null; 
-  username: string; 
-  offre_title: string;
-  short_description: string; 
-  deadline: Date; 
-  userEmail: string; 
-  IdBoost: number; 
-  status: string; 
-}
-
-
 
 export interface IFormData {
-  id: number; 
+  id: number;
   offre_title: string;
   short_description: string;
   deadline: Date;
   userEmail: string;
-  IdBoost: number; 
-  status: string; 
+  IdBoost: number;
+  status: string;
+  isTakenInCharge?: boolean;
 }
+
 
 export const submitForm = async (formData: IFormData) => {
   try {

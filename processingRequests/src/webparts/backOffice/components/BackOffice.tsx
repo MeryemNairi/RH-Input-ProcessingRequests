@@ -1,71 +1,27 @@
 import * as React from 'react';
+import { useState, useEffect } from 'react';
 import { IFormProps, IFormData } from './services/BackOfficeService';
-import { getFormData, updateFormEntry, deleteFormEntry, submitForm, IRequestData } from './services/BackOfficeService'; // Assurez-vous d'importer submitForm et IRequestData
+import { getFormData, updateFormEntry, deleteFormEntry } from './services/BackOfficeService';
+import { ProcessingRequestService } from './services/ProcessingRequestService';
+import { sp } from "@pnp/sp/presets/all";
+import Navbar from './Header/navbar';
+import Footer from './Footer/footer';
 import styles from './BackOffice.module.scss';
-import { sp } from "@pnp/sp";
-import  { useState } from 'react';
-
 
 export const BackOffice: React.FC<IFormProps> = ({ context }) => {
-  const [formData, setFormData] = React.useState<IFormData>({
-    id: 0,
-    offre_title: '',
-    short_description: '',
-    deadline: new Date(),
-    userEmail: '',
-    IdBoost: 0,
-    status: 'pending', 
-  });
+  const [formEntries, setFormEntries] = useState<IFormData[]>([]);
+  const [filterOption, setFilterOption] = useState('');
 
-
-  const [formEntries, setFormEntries] = React.useState<IFormData[]>([]);
-
-  React.useEffect(() => {
+  useEffect(() => {
     fetchFormData();
   }, []);
 
   const fetchFormData = async () => {
     try {
       const formData = await getFormData();
-      console.log(formData); 
       setFormEntries(formData);
     } catch (error) {
       console.error('Error fetching form data:', error);
-    }
-  };
-
-  console.log(formData.userEmail); 
-  console.log(formData.IdBoost); 
-
-  
-  //i add
-  const handleSubmitToProcessingRequest = async () => {
-    try {
-      const { offre_title, short_description, deadline, userEmail, IdBoost, status } = formData;
-
-      const datedetraitement = new Date(); 
-      const datedefindetraitement = null;
-      const username = userEmail; 
-
-      const requestData: IRequestData = {
-        id: 0, 
-        datedetraitement: datedetraitement,
-        datedefindetraitement: datedefindetraitement,
-        username: username,
-        offre_title: offre_title,
-        short_description: short_description,
-        deadline: deadline,
-        userEmail: userEmail,
-        IdBoost: IdBoost,
-        status: status,
-      };
-
-      await submitForm(requestData);
-      alert('Form submitted successfully!');
-      fetchFormData();
-    } catch (error) {
-      console.error('Error submitting form:', error);
-      alert('An error occurred while submitting the form. Please try again.');
     }
   };
 
@@ -82,22 +38,25 @@ export const BackOffice: React.FC<IFormProps> = ({ context }) => {
     }
   };
 
-  const fetchCurrentUserEmail = async () => {
+  const fetchCurrentUserName = async () => {
     try {
       const currentUser = await sp.web.currentUser.get();
-      return currentUser.Email;
+      return currentUser.Title;
     } catch (error) {
-      console.error("Error fetching current user email:", error);
+      console.error('Error fetching current user name:', error);
       return null;
     }
   };
 
-  React.useEffect(() => {
-    fetchCurrentUserEmail().then((email) => {
-      setFormData((prevState) => ({
-        ...prevState,
-        userEmail: email || "",
-      }));
+  useEffect(() => {
+    fetchCurrentUserName().then((username) => {
+      setFormEntries(prevEntries =>
+        prevEntries.map(entry => ({
+          ...entry,
+          username: username || '',
+          isTakenInCharge: entry.isTakenInCharge || false
+        }))
+      );
     });
   }, []);
 
@@ -115,7 +74,7 @@ export const BackOffice: React.FC<IFormProps> = ({ context }) => {
       if (updatedEntry) {
         updatedEntry.status = newStatus;
         await updateFormEntry(id, updatedEntry);
-        fetchFormData(); 
+        fetchFormData();
       }
     } catch (error) {
       console.error('Error updating status:', error);
@@ -123,10 +82,33 @@ export const BackOffice: React.FC<IFormProps> = ({ context }) => {
     }
   };
 
-  
-  
-   
-  const [filterOption, setFilterOption] = useState('');
+  const handleTakeInCharge = async (id: number) => {
+    try {
+      const username = await fetchCurrentUserName();
+      await ProcessingRequestService.takeInCharge(id, username || '');
+      const updatedEntries = formEntries.map(entry =>
+        entry.id === id ? { ...entry, isTakenInCharge: true } : entry
+      );
+      setFormEntries(updatedEntries);
+    } catch (error) {
+      console.error('Error taking in charge:', error);
+      alert('An error occurred while taking in charge. Please try again.');
+    }
+  };
+
+  const handleRelease = async (id: number) => {
+    try {
+      await ProcessingRequestService.release(id);
+      const updatedEntries = formEntries.map(entry =>
+        entry.id === id ? { ...entry, isTakenInCharge: false, datedefindetraitement: new Date() } : entry
+      );
+      setFormEntries(updatedEntries);
+    } catch (error) {
+      console.error('Error releasing:', error);
+      alert('An error occurred while releasing. Please try again.');
+    }
+  };
+
   const options = [
     'Attestation de travail',
     'Attestation de salaire',
@@ -138,10 +120,9 @@ export const BackOffice: React.FC<IFormProps> = ({ context }) => {
     'Bulletins de paie cachetés',
   ];
 
-
-
   return (
-    <>
+    <div>
+      <Navbar />
       <div style={{ width: '100%', maxWidth: '900px', margin: '0 auto', padding: '0 20px' }}>
         <div style={{ display: 'flex', justifyContent: 'center' }}>
           <div>
@@ -164,9 +145,9 @@ export const BackOffice: React.FC<IFormProps> = ({ context }) => {
                 </div>
                 <div className={styles.recordsContainer}>
                   {formEntries
-                    .filter((entry) => filterOption ? entry.offre_title === filterOption : true)
+                    .filter(entry => filterOption ? entry.offre_title === filterOption : true)
                     .map((entry, index) => (
-                      <div key={index} className={styles.record}>
+                      <div key={index} className={`${styles.record} ${entry.isTakenInCharge ? '' : styles.recordGrayed}`}>
                         <div className={styles.recordField}>{entry.userEmail}</div>
                         <div className={styles.recordField}>{entry.offre_title}</div>
                         <div className={styles.recordField}>{entry.short_description}</div>
@@ -176,6 +157,7 @@ export const BackOffice: React.FC<IFormProps> = ({ context }) => {
                           <select
                             value={entry.status}
                             onChange={(e) => handleStatusChange(entry.id, e.target.value)}
+                            disabled={!entry.isTakenInCharge}
                           >
                             {statusOptions.map((status, index) => (
                               <option key={index} value={status}>
@@ -185,31 +167,26 @@ export const BackOffice: React.FC<IFormProps> = ({ context }) => {
                           </select>
                         </div>
                         <div className={styles.recordField}>
-                          <span className={styles.iconSpace}></span>
-                          <svg
-                            width="28"
-                            height="28"
-                            viewBox="0 0 42 42"
-                            fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
-                            onClick={() => handleDeleteEntry(entry.id)}
-                          >
-                            <path d="M33.25 7H27.125L25.375 5.25H16.625L14.875 7H8.75V10.5H33.25M10.5 33.25C10.5 34.1783 10.8687 35.0685 11.5251 35.7249C12.1815 36.3813 13.0717 36.75 14 36.75H28C28.9283 36.75 29.8185 36.3813 30.4749 35.7249C31.1313 35.0685 31.5 34.1783 31.5 33.25V12.25H10.5V33.25Z" fill="#FF5454" />
-                        </svg>
+                          {entry.isTakenInCharge ? (
+                            <button onClick={() => handleRelease(entry.id)}>Libérer</button>
+                          ) : (
+                            <button onClick={() => handleTakeInCharge(entry.id)}>Prendre en charge</button>
+                          )}
+                        </div>
+                        <div className={styles.recordField}>
+                          <button onClick={() => handleDeleteEntry(entry.id)} disabled={!entry.isTakenInCharge}>Supprimer</button>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                </div>
               </div>
             </div>
           </div>
-          <div style={{ marginBottom: '50px' }}></div>
-          <button onClick={handleSubmitToProcessingRequest}>Submit to processingRequest</button>
         </div>
       </div>
+      <Footer />
     </div>
-    </>
   );
-  
 };
 
 export default BackOffice;
