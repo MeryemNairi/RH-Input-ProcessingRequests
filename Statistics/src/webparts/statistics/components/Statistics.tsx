@@ -1,121 +1,82 @@
 import * as React from 'react';
-import { useEffect, useState } from 'react';
-import * as XLSX from 'xlsx';
-import Chart from 'chart.js/auto';
-
-const options = [
-  'Attestation de travail',
-  'Attestation de salaire',
-  'Domicialisation irrévocable de salaire',
-  'Attestation de congé',
-  'Attestation de salaire annuelle',
-  'Borderaux de CNSS',
-  'Attestation de titularisation',
-  'Bulletins de paie cachetés',
-];
+import { Line, Bar } from 'react-chartjs-2';
+import 'chart.js/auto';
 
 const Statistics: React.FC = () => {
-  const [, setData] = useState<{ [key: string]: Date }>({});
 
-  useEffect(() => {
-    fetchDataFromExcel();
-  }, []);
-
-  const fetchDataFromExcel = async () => {
-    try {
-      const response = await fetch('https://cnexia.sharepoint.com/sites/CnexiaForEveryone/Shared%20Documents/Requests.ods');
-      const data = await response.arrayBuffer();
-
-      const workbook = XLSX.read(data, { type: 'array' });
-      const sheetName = workbook.SheetNames[0];
-      const worksheet = workbook.Sheets[sheetName];
-
-      const jsonData = XLSX.utils.sheet_to_json(worksheet, { raw: true });
-
-      const chartData: { [key: string]: Date } = {};
-
-      options.forEach(option => chartData[option] = new Date()); // Initialiser les dates à aujourd'hui par défaut
-
-      jsonData.forEach((item: any) => {
-        const offreTitle = item.offre_title as string;
-        if (options.includes(offreTitle)) {
-          chartData[offreTitle] = new Date(item.deadline); // Convertir la date en objet Date
-        }
-      });
-
-      setData(chartData);
-      renderChart(chartData);
-    } catch (error) {
-      console.error('Error fetching data from Excel:', error);
-    }
+  const dataLine = {
+    labels: ['Attestation de travail', 'Attestation de salaire', 'Domiciliation irrévocable de salaire', 'Attestation de congé', 'Borderaux de CNSS', 'Attestation de travail', 'Attestation de travail'],
+    datasets: [
+      {
+        label: 'Jours de juin',
+        data: [10, 13, 15, 18, 19, 13, 8],
+        fill: false,
+        backgroundColor: 'rgb(75, 192, 192)',
+        borderColor: 'rgba(75, 192, 192, 0.2)',
+      },
+    ],
   };
 
-  const renderChart = (chartData: { [key: string]: Date }) => {
-    const canvas = document.getElementById('chart') as HTMLCanvasElement;
-    if (!canvas) {
-      console.error('Canvas element not found.');
-      return;
-    }
 
-    const ctx = canvas.getContext('2d');
-    if (!ctx) {
-      console.error('Unable to get 2d context of canvas.');
-      return;
-    }
-
-    if (typeof Chart !== 'undefined') {
-      new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: options,
-          datasets: [{
-            label: 'Date de clôture',
-            data: options.map(option => chartData[option] || new Date()),
-            backgroundColor: [
-              'rgba(255, 99, 132, 0.2)',
-              'rgba(54, 162, 235, 0.2)',
-              'rgba(255, 206, 86, 0.2)',
-              'rgba(75, 192, 192, 0.2)',
-              'rgba(153, 102, 255, 0.2)',
-              'rgba(255, 159, 64, 0.2)',
-              'rgba(255, 99, 132, 0.2)',
-              'rgba(54, 162, 235, 0.2)',
-            ],
-            borderColor: [
-              'rgba(255, 99, 132, 1)',
-              'rgba(54, 162, 235, 1)',
-              'rgba(255, 206, 86, 1)',
-              'rgba(75, 192, 192, 1)',
-              'rgba(153, 102, 255, 1)',
-              'rgba(255, 159, 64, 1)',
-              'rgba(255, 99, 132, 1)',
-              'rgba(54, 162, 235, 1)',
-            ],
-            borderWidth: 1,
-          }],
-        },
-        options: {
-          scales: {
-            y: {
-              type: 'time', // Définir l'axe y comme étant de type 'time' pour les dates
-              time: {
-                unit: 'day', // Unité de temps (jour, mois, année, etc.)
-              },
-              // min: Définir la date minimale si nécessaire
-              // max: Définir la date maximale si nécessaire
-            },
-          },
-        },
-      });
+  const labelCounts: { [key: string]: number } = dataLine.labels.reduce((counts: { [key: string]: number }, label: string) => {
+    if (counts[label]) {
+      counts[label] += 1;
     } else {
-      console.error('Chart.js n\'est pas chargé correctement.');
+      counts[label] = 1;
     }
+    return counts;
+  }, {});
+
+
+  const mostFrequentLabel = Object.keys(labelCounts).reduce((a, b) => labelCounts[a] > labelCounts[b] ? a : b);
+  const mostFrequentCount = labelCounts[mostFrequentLabel];
+
+
+  const barChartData = {
+    labels: Object.keys(labelCounts),
+    datasets: [
+      {
+        label: 'Fréquence des demandes',
+        data: Object.values(labelCounts),
+        backgroundColor: 'rgba(54, 162, 235, 0.6)',
+        borderColor: 'rgba(54, 162, 235, 1)',
+        borderWidth: 1,
+      },
+    ],
+  };
+
+  const options = {
+    scales: {
+      x: {
+        type: 'category' as const,
+        position: 'bottom' as const,
+      },
+      y: {
+        beginAtZero: true,
+        ticks: {
+          stepSize: 1,
+        },
+      },
+    },
   };
 
   return (
-    <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-      <h2 style={{ textAlign: 'center', marginBottom: '20px' }}>Statistiques des demandes par titre</h2>
-      <canvas id="chart" width={800} height={400}></canvas>
+    <div>
+      <h2>Résultats des demandes de RH pour le mois de juin</h2>
+
+      {/* Graphique en ligne */}
+      <Line data={dataLine} options={options} />
+
+      <div style={{ marginTop: '20px' }}>
+        <h3>Fréquence des demandes :</h3>
+        {/* Graphique en barres */}
+        <Bar data={barChartData} options={options} />
+      </div>
+
+      <div>
+        <h3>Demande la plus demandée :</h3>
+        <p>{mostFrequentLabel} ({mostFrequentCount} fois)</p>
+      </div>
     </div>
   );
 };
