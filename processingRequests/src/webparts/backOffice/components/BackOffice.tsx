@@ -11,6 +11,7 @@ import styles from './BackOffice.module.scss';
 export const BackOffice: React.FC<IFormProps> = ({ context }) => {
   const [formEntries, setFormEntries] = useState<IFormData[]>([]);
   const [filterOption, setFilterOption] = useState('');
+  const [cityFilter, setCityFilter] = useState('');
 
   useEffect(() => {
     fetchFormData();
@@ -120,6 +121,9 @@ export const BackOffice: React.FC<IFormProps> = ({ context }) => {
     'Bulletins de paie cachetés',
   ];
 
+  // Extract unique cities for the city filter dropdown
+  const cities = [...new Set(formEntries.map(entry => entry.city))];
+
   return (
     <div>
       <Navbar />
@@ -142,10 +146,23 @@ export const BackOffice: React.FC<IFormProps> = ({ context }) => {
                       </option>
                     ))}
                   </select>
+                  <select
+                    value={cityFilter}
+                    onChange={(e) => setCityFilter(e.target.value)}
+                    style={{ marginLeft: '20px' }}
+                  >
+                    <option value="">Toutes les villes</option>
+                    {cities.map((city, index) => (
+                      <option key={index} value={city}>
+                        {city}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div className={styles.recordsContainer}>
                   {formEntries
-                    .filter(entry => filterOption ? entry.offre_title === filterOption : true)
+                    .filter(entry => (filterOption ? entry.offre_title === filterOption : true) &&
+                                      (cityFilter ? entry.city === cityFilter : true))
                     .map((entry, index) => (
                       <div key={index} className={`${styles.record} ${entry.isTakenInCharge ? '' : styles.recordGrayed}`}>
                         <div className={styles.recordField}>{entry.userEmail}</div>
@@ -153,6 +170,7 @@ export const BackOffice: React.FC<IFormProps> = ({ context }) => {
                         <div className={styles.recordField}>{entry.short_description}</div>
                         <div className={styles.recordField}>{entry.IdBoost}</div>
                         <div className={styles.recordField}>{entry.deadline.toLocaleDateString()}</div>
+                        <div className={styles.recordField}>{entry.city}</div>
                         <div className={styles.recordField}>
                           <select
                             value={entry.status}
