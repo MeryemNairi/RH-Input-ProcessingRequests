@@ -104,11 +104,19 @@ export const BackOffice: React.FC<IFormProps> = ({ context }) => {
         entry.id === id ? { ...entry, isTakenInCharge: false, datedefindetraitement: new Date() } : entry
       );
       setFormEntries(updatedEntries);
+      alert('Entry released successfully!');
     } catch (error) {
       console.error('Error releasing:', error);
-      alert('An error occurred while releasing. Please try again.');
+      if (error instanceof Error && error.message.includes('404')) {
+        alert('The item could not be found or has been deleted.');
+      } else {
+        alert('An error occurred while releasing. Please try again.');
+      }
     }
   };
+  
+  
+  
 
   const options = [
     'Attestation de travail',
@@ -165,6 +173,7 @@ export const BackOffice: React.FC<IFormProps> = ({ context }) => {
                                       (cityFilter ? entry.city === cityFilter : true))
                     .map((entry, index) => (
                       <div key={index} className={`${styles.record} ${entry.isTakenInCharge ? '' : styles.recordGrayed}`}>
+                          <div className={styles.recordField}>Code{entry.code}</div>
                         <div className={styles.recordField}>{entry.userEmail}</div>
                         <div className={styles.recordField}>{entry.offre_title}</div>
                         <div className={styles.recordField}>{entry.short_description}</div>

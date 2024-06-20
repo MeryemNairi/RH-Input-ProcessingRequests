@@ -17,6 +17,7 @@ export interface IFormData {
   status: string;
   isTakenInCharge?: boolean;
   city: string;  
+  code: string; 
 }
 
 
@@ -31,6 +32,7 @@ export const submitForm = async (formData: IFormData) => {
       IdBoost: formData.IdBoost,
       status: formData.status, 
       city: formData.city, 
+      code: formData.code,
     });
   } catch (error) {
     console.error('Error submitting form:', error);
@@ -42,7 +44,7 @@ export const submitForm = async (formData: IFormData) => {
 export const getFormData = async (): Promise<IFormData[]> => {
   try {
     const list = sp.web.lists.getByTitle('Communication');
-    const items = await list.items.select('Id', 'offre_title', 'short_description', 'deadline', 'userEmail', 'IdBoost', 'status', 'city').get();
+    const items = await list.items.select('Id', 'offre_title', 'short_description', 'deadline', 'userEmail', 'IdBoost', 'status', 'city', 'code').get();
     return items.map((item: any) => ({
       id: item.Id,
       offre_title: item.offre_title,
@@ -52,6 +54,7 @@ export const getFormData = async (): Promise<IFormData[]> => {
       IdBoost: item.IdBoost,
       status: item.status,
       city: item.city,   
+      code: item.code,
     }));
   } catch (error) {
     console.error('Error fetching form data:', error);

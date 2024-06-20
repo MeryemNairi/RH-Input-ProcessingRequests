@@ -25,18 +25,21 @@ export const ProcessingRequestService = {
   },
 
   async release(id: number) {
-    const currentDate = new Date().toISOString();
-
-    const item: ProcessingRequest = {
-      datedefindetraitement: new Date(currentDate),
-    };
-
     try {
+      const currentDate = new Date().toISOString();
+  
+      const item: ProcessingRequest = {
+        datedefindetraitement: new Date(currentDate),
+      };
+  
       const list = sp.web.lists.getByTitle('processingRequest');
       await list.items.getById(id).update(item);
+  
     } catch (error) {
       console.error('Error releasing:', error);
       throw error;
     }
-  },
+  }
+  
+  
 };
