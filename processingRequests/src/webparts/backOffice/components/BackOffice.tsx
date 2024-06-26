@@ -12,9 +12,11 @@ export const BackOffice: React.FC<IFormProps> = ({ context }) => {
   const [formEntries, setFormEntries] = useState<IFormData[]>([]);
   const [filterOption, setFilterOption] = useState('');
   const [cityFilter, setCityFilter] = useState('');
+  const [currentUser, setCurrentUser] = useState<string | null>(null);
 
   useEffect(() => {
     fetchFormData();
+    fetchCurrentUserName();
   }, []);
 
   const fetchFormData = async () => {
@@ -23,6 +25,15 @@ export const BackOffice: React.FC<IFormProps> = ({ context }) => {
       setFormEntries(formData);
     } catch (error) {
       console.error('Error fetching form data:', error);
+    }
+  };
+
+  const fetchCurrentUserName = async () => {
+    try {
+      const currentUser = await sp.web.currentUser.get();
+      setCurrentUser(currentUser.Title);
+    } catch (error) {
+      console.error('Error fetching current user name:', error);
     }
   };
 
@@ -38,28 +49,6 @@ export const BackOffice: React.FC<IFormProps> = ({ context }) => {
       }
     }
   };
-
-  const fetchCurrentUserName = async () => {
-    try {
-      const currentUser = await sp.web.currentUser.get();
-      return currentUser.Title;
-    } catch (error) {
-      console.error('Error fetching current user name:', error);
-      return null;
-    }
-  };
-
-  useEffect(() => {
-    fetchCurrentUserName().then((username) => {
-      setFormEntries(prevEntries =>
-        prevEntries.map(entry => ({
-          ...entry,
-          username: username || '',
-          isTakenInCharge: entry.isTakenInCharge || false
-        }))
-      );
-    });
-  }, []);
 
   const statusOptions = [
     'pending',
@@ -85,12 +74,14 @@ export const BackOffice: React.FC<IFormProps> = ({ context }) => {
 
   const handleTakeInCharge = async (id: number) => {
     try {
-      const username = await fetchCurrentUserName();
-      await ProcessingRequestService.takeInCharge(id, username || '');
-      const updatedEntries = formEntries.map(entry =>
-        entry.id === id ? { ...entry, isTakenInCharge: true } : entry
-      );
-      setFormEntries(updatedEntries);
+      const entry = formEntries.find(entry => entry.id === id);
+      if (entry && currentUser) {
+        await ProcessingRequestService.takeInCharge(id, currentUser, entry.code);
+        const updatedEntries = formEntries.map(entry =>
+          entry.id === id ? { ...entry, isTakenInCharge: true, takenInChargeBy: currentUser } : entry
+        );
+        setFormEntries(updatedEntries);
+      }
     } catch (error) {
       console.error('Error taking in charge:', error);
       alert('An error occurred while taking in charge. Please try again.');
@@ -99,24 +90,24 @@ export const BackOffice: React.FC<IFormProps> = ({ context }) => {
 
   const handleRelease = async (id: number) => {
     try {
-      await ProcessingRequestService.release(id);
-      const updatedEntries = formEntries.map(entry =>
-        entry.id === id ? { ...entry, isTakenInCharge: false, datedefindetraitement: new Date() } : entry
-      );
-      setFormEntries(updatedEntries);
-      alert('Entry released successfully!');
+      const entry = formEntries.find(entry => entry.id === id);
+      if (entry) {
+        await ProcessingRequestService.release(entry.code);
+        const updatedEntries = formEntries.map(entry =>
+          entry.id === id ? { ...entry, isTakenInCharge: false, datedefindetraitement: new Date(), takenInChargeBy: '' } : entry
+        );
+        setFormEntries(updatedEntries);
+        alert('Entry released successfully!');
+      }
     } catch (error) {
       console.error('Error releasing:', error);
-      if (error instanceof Error && error.message.includes('404')) {
+      if (error instanceof Error && error.message.includes('Item not found')) {
         alert('The item could not be found or has been deleted.');
       } else {
         alert('An error occurred while releasing. Please try again.');
       }
     }
   };
-  
-  
-  
 
   const options = [
     'Attestation de travail',
@@ -173,7 +164,12 @@ export const BackOffice: React.FC<IFormProps> = ({ context }) => {
                                       (cityFilter ? entry.city === cityFilter : true))
                     .map((entry, index) => (
                       <div key={index} className={`${styles.record} ${entry.isTakenInCharge ? '' : styles.recordGrayed}`}>
-                          <div className={styles.recordField}>Code{entry.code}</div>
+                        {entry.isTakenInCharge && entry.takenInChargeBy && (
+                          <div className={styles.recordField}>
+                            Already taken in charge by {entry.takenInChargeBy}
+                          </div>
+                        )}
+                        <div className={styles.recordField}>Code: {entry.code}</div>
                         <div className={styles.recordField}>{entry.userEmail}</div>
                         <div className={styles.recordField}>{entry.offre_title}</div>
                         <div className={styles.recordField}>{entry.short_description}</div>
@@ -197,7 +193,12 @@ export const BackOffice: React.FC<IFormProps> = ({ context }) => {
                           {entry.isTakenInCharge ? (
                             <button onClick={() => handleRelease(entry.id)}>Libérer</button>
                           ) : (
-                            <button onClick={() => handleTakeInCharge(entry.id)}>Prendre en charge</button>
+                            <button
+                              onClick={() => handleTakeInCharge(entry.id)}
+                              disabled={entry.isTakenInCharge && entry.takenInChargeBy !== currentUser}
+                            >
+                              Prendre en charge
+                            </button>
                           )}
                         </div>
                         <div className={styles.recordField}>

@@ -18,6 +18,7 @@ export interface IFormData {
   isTakenInCharge?: boolean;
   city: string;  
   code: string; 
+  takenInChargeBy?: string; 
 }
 
 
