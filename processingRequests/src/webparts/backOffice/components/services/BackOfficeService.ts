@@ -19,6 +19,7 @@ export interface IFormData {
   city: string;  
   code: string; 
   takenInChargeBy?: string; 
+  datefin?: Date; // Include datefin
 }
 
 

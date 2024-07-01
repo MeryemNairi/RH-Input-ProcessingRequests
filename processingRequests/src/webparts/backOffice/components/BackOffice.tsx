@@ -1,9 +1,8 @@
 import * as React from 'react';
 import { useState, useEffect } from 'react';
-import { IFormProps, IFormData } from './services/BackOfficeService';
-import { getFormData, updateFormEntry, deleteFormEntry } from './services/BackOfficeService';
+import { IFormProps, IFormData, getFormData, updateFormEntry, deleteFormEntry } from './services/BackOfficeService';
 import { ProcessingRequestService } from './services/ProcessingRequestService';
-import { sp } from "@pnp/sp/presets/all";
+import { sp } from '@pnp/sp/presets/all';
 import Navbar from './Header/navbar';
 import Footer from './Footer/footer';
 import styles from './BackOffice.module.scss';
@@ -93,8 +92,16 @@ export const BackOffice: React.FC<IFormProps> = ({ context }) => {
       const entry = formEntries.find(entry => entry.id === id);
       if (entry) {
         await ProcessingRequestService.release(entry.code);
+        const currentDate = new Date();
+        const updatedEntry = {
+          ...entry,
+          datedefindetraitement: currentDate,
+          isTakenInCharge: false,
+          takenInChargeBy: ''
+        };
+        await updateFormEntry(id, updatedEntry);
         const updatedEntries = formEntries.map(entry =>
-          entry.id === id ? { ...entry, isTakenInCharge: false, datedefindetraitement: new Date(), takenInChargeBy: '' } : entry
+          entry.id === id ? updatedEntry : entry
         );
         setFormEntries(updatedEntries);
         alert('Entry released successfully!');
@@ -191,18 +198,13 @@ export const BackOffice: React.FC<IFormProps> = ({ context }) => {
                         </div>
                         <div className={styles.recordField}>
                           {entry.isTakenInCharge ? (
-                            <button onClick={() => handleRelease(entry.id)}>Libérer</button>
+                            <button onClick={() => handleRelease(entry.id)}>Release</button>
                           ) : (
-                            <button
-                              onClick={() => handleTakeInCharge(entry.id)}
-                              disabled={entry.isTakenInCharge && entry.takenInChargeBy !== currentUser}
-                            >
-                              Prendre en charge
-                            </button>
+                            <button onClick={() => handleTakeInCharge(entry.id)}>Take in charge</button>
                           )}
                         </div>
                         <div className={styles.recordField}>
-                          <button onClick={() => handleDeleteEntry(entry.id)} disabled={!entry.isTakenInCharge}>Supprimer</button>
+                          <button onClick={() => handleDeleteEntry(entry.id)}>Delete</button>
                         </div>
                       </div>
                     ))}
@@ -216,5 +218,3 @@ export const BackOffice: React.FC<IFormProps> = ({ context }) => {
     </div>
   );
 };
-
-export default BackOffice;

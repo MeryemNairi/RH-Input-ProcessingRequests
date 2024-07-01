@@ -26,6 +26,7 @@ export const ProcessingRequestService = {
     }
   },
 
+  
   async release(code: string) {
     try {
       const currentDate = new Date().toISOString();
