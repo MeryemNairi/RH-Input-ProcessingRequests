@@ -9,7 +9,7 @@ import {
 import { sp } from "@pnp/sp/presets/all";
 import { BrowserRouter as Router } from 'react-router-dom'; 
 
-import BackOffice from './components/BackOffice';
+import { BackOffice } from './components/BackOffice';
 
 export default class CareerPageWebPart extends BaseClientSideWebPart<{}> {
 
