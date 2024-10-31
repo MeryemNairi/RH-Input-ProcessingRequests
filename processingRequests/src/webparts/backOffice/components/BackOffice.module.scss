@@ -135,6 +135,7 @@
   background-size: 100%;
   background-color: #F5F9FF;
   overflow-x: auto;
+  width: "100%";
 }
 
 .record {
@@ -537,6 +538,7 @@
   padding: 8px; /* Espacement interne des champs */
   display: flex; /* Utiliser Flexbox */
   align-items: center; /* Centrer verticalement le contenu */
+  width: 100%;
 }
 
 .fileLink {
